@@ -543,6 +543,21 @@ class TestMemCache < Test::Unit::TestCase
     assert_equal 'some io error', e.message
   end
 
+  def test_get_cache_get_broken_pipe
+    socket = Object.new
+    def socket.write(arg) raise Errno::EPIPE, 'foo'; end
+    server = FakeServer.new socket
+
+    @cache.servers = []
+    @cache.servers << server
+
+    e = assert_raise IndexError do
+      @cache.cache_get server, 'my_namespace:key'
+    end
+
+    assert_equal "Broken connection to server: Broken pipe - foo", e.message
+  end
+
   def test_get_cache_get_SystemCallError
     socket = Object.new
     def socket.write(arg) raise SystemCallError, 'some syscall error'; end

@@ -870,7 +870,10 @@ class MemCache
 
       block.call(socket)
 
-    rescue SocketError, Errno::EAGAIN, Timeout::Error => err
+    rescue Errno::EPIPE => err
+      raise IndexError, "Broken connection to server: #{err.message}"
+
+    rescue SocketError, Errno::EAGAIN, Errno::EPIPE, Timeout::Error => err
       logger.warn { "Socket failure: #{err.message}" } if logger
       server.mark_dead(err)
       handle_error(server, err)
